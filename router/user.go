@@ -2,6 +2,7 @@ package router
 
 import (
 	"AuthInGo/controllers"
+	"fmt"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -17,5 +18,6 @@ func NewUserRouter(_userController *controllers.UserController) Router {
 }
 
 func (ur *UserRouter) Register(r chi.Router) {
+	fmt.Println("In user router")
 	r.Post("/signup", ur.userController.RegisterUser)
 }
