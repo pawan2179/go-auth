@@ -21,4 +21,5 @@ func (ur *UserRouter) Register(r chi.Router) {
 	fmt.Println("In user router")
 	r.Post("/signup", ur.userController.RegisterUser)
 	r.Get("/profile", ur.userController.GetById)
+	r.Post("/login", ur.userController.LoginUser)
 }

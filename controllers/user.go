@@ -26,3 +26,9 @@ func (uc *UserController) GetById(w http.ResponseWriter, r *http.Request) {
 	uc.UserService.GetUserById()
 	w.Write([]byte("User fetching endpoint"))
 }
+
+func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("In user login controller")
+	uc.UserService.LoginUser()
+	w.Write([]byte("User login endpoint done"))
+}

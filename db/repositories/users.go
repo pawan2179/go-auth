@@ -7,8 +7,9 @@ import (
 )
 
 type UserRespository interface {
-	Create() error
+	Create(username string, email string, hashedPassword string) error
 	GetById() (*models.User, error)
+	GetByEmail(email string) (*models.User, error)
 }
 
 type UserRespositoryImpl struct {
@@ -21,10 +22,10 @@ func NewUserRepository(db *sql.DB) UserRespository {
 	}
 }
 
-func (u *UserRespositoryImpl) Create() error {
+func (u *UserRespositoryImpl) Create(username string, email string, hashedPassword string) error {
 	fmt.Println("in user repo for create user")
 	query := "INSERT INTO users (username, email, password) VALUES (?, ?, ?)"
-	result, err := u.db.Exec(query, "testuser", "test@test.com", "password123")
+	result, err := u.db.Exec(query, username, email, hashedPassword)
 
 	if err != nil {
 		fmt.Println("Failed to create user: ", err)
@@ -65,5 +66,25 @@ func (u *UserRespositoryImpl) GetById() (*models.User, error) {
 	}
 
 	fmt.Println("User fetched successfully :", user)
+	return user, nil
+}
+
+func (u *UserRespositoryImpl) GetByEmail(email string) (*models.User, error) {
+	query := "SELECT id, email, password FROM users where email = ?"
+	row := u.db.QueryRow(query, email)
+
+	user := &models.User{}
+	err := row.Scan(&user.Id, &user.Email, &user.Password)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("No user found with given email")
+			return nil, err
+		} else {
+			fmt.Println("Error in scanning for user:", err)
+			return nil, err
+		}
+	}
+	fmt.Println("Fetched user from email: ", user)
 	return user, nil
 }
