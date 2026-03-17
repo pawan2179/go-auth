@@ -1,8 +1,8 @@
 package main
 
 import (
-	app "AuthInGo/app"
-	config "AuthInGo/config/env"
+	app "auth-go/app"
+	config "auth-go/config/env"
 	"fmt"
 )
 

@@ -1,9 +1,10 @@
 package service
 
 import (
-	env "AuthInGo/config/env"
-	db "AuthInGo/db/repositories"
-	utils "AuthInGo/utils"
+	env "auth-go/config/env"
+	db "auth-go/db/repositories"
+	"auth-go/dto"
+	utils "auth-go/utils"
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,7 +13,7 @@ import (
 type UserService interface {
 	CreateUser() error
 	GetUserById() error
-	LoginUser() (string, error)
+	LoginUser(payload *dto.LoginUserRequestDTO) (string, error)
 }
 
 type UserServiceImpl struct {
@@ -46,9 +47,9 @@ func (u *UserServiceImpl) GetUserById() error {
 	return nil
 }
 
-func (u *UserServiceImpl) LoginUser() (string, error) {
-	email := "user_email"
-	password := "user_password"
+func (u *UserServiceImpl) LoginUser(payload *dto.LoginUserRequestDTO) (string, error) {
+	email := payload.Email
+	password := payload.Password
 	user, err := u.userRespository.GetByEmail(email)
 
 	if err != nil {
@@ -68,12 +69,12 @@ func (u *UserServiceImpl) LoginUser() (string, error) {
 		return "", nil
 	}
 	fmt.Println("User logged in successfully, generate JWT here")
-	payload := jwt.MapClaims{
+	jwtPayload := jwt.MapClaims{
 		"email": user.Email,
 		"id":    user.Id,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtPayload)
 	tokenString, err := token.SignedString([]byte(env.GetString("JWT_SECRET", "TOKEN")))
 
 	if err != nil {

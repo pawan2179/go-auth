@@ -1,7 +1,7 @@
 package router
 
 import (
-	"AuthInGo/controllers"
+	"auth-go/controllers"
 	"fmt"
 
 	"github.com/go-chi/chi/v5"

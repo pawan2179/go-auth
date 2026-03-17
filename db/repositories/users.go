@@ -1,7 +1,7 @@
 package db
 
 import (
-	"AuthInGo/models"
+	"auth-go/models"
 	"database/sql"
 	"fmt"
 )

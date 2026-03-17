@@ -1,7 +1,7 @@
 package config
 
 import (
-	env "AuthInGo/config/env"
+	env "auth-go/config/env"
 	"database/sql"
 	"fmt"
 

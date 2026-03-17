@@ -1,7 +1,9 @@
 package controllers
 
 import (
-	services "AuthInGo/service"
+	"auth-go/dto"
+	services "auth-go/service"
+	"auth-go/utils"
 	"fmt"
 	"net/http"
 )
@@ -29,6 +31,22 @@ func (uc *UserController) GetById(w http.ResponseWriter, r *http.Request) {
 
 func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("In user login controller")
-	uc.UserService.LoginUser()
-	w.Write([]byte("User login endpoint done"))
+
+	var payload dto.LoginUserRequestDTO
+
+	if err := utils.ReadJsonBody(r, &payload); err != nil {
+		utils.WriteJsonErrorResponse(w, http.StatusBadRequest, "Something went wrong while logging in", err)
+		return
+	}
+
+	if validationErr := utils.Validator.Struct(payload); validationErr != nil {
+		utils.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
+	}
+
+	jwtToken, tokenErr := uc.UserService.LoginUser(&payload)
+	if tokenErr != nil {
+		utils.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Faield to login user", tokenErr)
+		return
+	}
+	utils.WriteJsonSuccessResponse(w, http.StatusOK, "User logged in successfully", jwtToken)
 }
