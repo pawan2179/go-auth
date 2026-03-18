@@ -4,6 +4,7 @@ import (
 	env "auth-go/config/env"
 	db "auth-go/db/repositories"
 	"auth-go/dto"
+	"auth-go/models"
 	utils "auth-go/utils"
 	"fmt"
 
@@ -11,7 +12,7 @@ import (
 )
 
 type UserService interface {
-	CreateUser() error
+	CreateUser(payload *dto.CreateUserRequestDTO) (*models.User, error)
 	GetUserById() error
 	LoginUser(payload *dto.LoginUserRequestDTO) (string, error)
 }
@@ -26,19 +27,24 @@ func NewUserService(_userRepository db.UserRespository) UserService {
 	}
 }
 
-func (u *UserServiceImpl) CreateUser() error {
+func (u *UserServiceImpl) CreateUser(payload *dto.CreateUserRequestDTO) (*models.User, error) {
 	fmt.Println("In User service -> Create User")
-	password, err := utils.HashPassword("user_password")
+	password, err := utils.HashPassword(payload.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	u.userRespository.Create(
-		"username_example",
-		"user_email",
+	user, err := u.userRespository.Create(
+		payload.Username,
+		payload.Email,
 		password,
 	)
-	return nil
+
+	if err != nil {
+		fmt.Println("Error creating user:", err)
+		return nil, err
+	}
+	return user, nil
 }
 
 func (u *UserServiceImpl) GetUserById() error {

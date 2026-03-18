@@ -20,7 +20,20 @@ func NewUserController(_userService services.UserService) *UserController {
 
 func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in user controller for /register")
-	uc.UserService.CreateUser()
+	var payload dto.CreateUserRequestDTO
+
+	if err := utils.ReadJsonBody(r, &payload); err != nil {
+		fmt.Println("Failed to read create user request payload:", err)
+		utils.WriteJsonErrorResponse(w, http.StatusBadRequest, "Could not read request body for create user", err)
+		return
+	}
+	fmt.Println("Calling service to create user")
+	user, err := uc.UserService.CreateUser(&payload)
+	if err != nil {
+		utils.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to create user", err)
+		return
+	}
+	utils.WriteJsonSuccessResponse(w, http.StatusCreated, "User added successfully", user)
 }
 
 func (uc *UserController) GetById(w http.ResponseWriter, r *http.Request) {
