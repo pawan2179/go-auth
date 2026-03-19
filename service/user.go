@@ -13,7 +13,7 @@ import (
 
 type UserService interface {
 	CreateUser(payload *dto.CreateUserRequestDTO) (*models.User, error)
-	GetUserById() error
+	GetUserById(id string) (*models.User, error)
 	LoginUser(payload *dto.LoginUserRequestDTO) (string, error)
 }
 
@@ -47,10 +47,14 @@ func (u *UserServiceImpl) CreateUser(payload *dto.CreateUserRequestDTO) (*models
 	return user, nil
 }
 
-func (u *UserServiceImpl) GetUserById() error {
+func (u *UserServiceImpl) GetUserById(id string) (*models.User, error) {
 	fmt.Println("Fetching user in UserService")
-	u.userRespository.GetById()
-	return nil
+	user, err := u.userRespository.GetById(id)
+	if err != nil {
+		fmt.Println("Error fetching user:", err)
+		return nil, err
+	}
+	return user, nil
 }
 
 func (u *UserServiceImpl) LoginUser(payload *dto.LoginUserRequestDTO) (string, error) {
@@ -60,12 +64,12 @@ func (u *UserServiceImpl) LoginUser(payload *dto.LoginUserRequestDTO) (string, e
 
 	if err != nil {
 		fmt.Println("Failed to check if user exist: ", err)
-		return "", nil
+		return "", err
 	}
 
 	if user == nil {
 		fmt.Println("No user found with given email: ", email)
-		return "", nil
+		return "", err
 	}
 
 	isPasswordValid := utils.CheckPasswordHash(password, user.Password)

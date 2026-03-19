@@ -20,7 +20,7 @@ func NewUserController(_userService services.UserService) *UserController {
 
 func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in user controller for /register")
-	var payload dto.CreateUserRequestDTO
+	payload := r.Context().Value("payload").(dto.CreateUserRequestDTO)
 
 	if err := utils.ReadJsonBody(r, &payload); err != nil {
 		fmt.Println("Failed to read create user request payload:", err)
@@ -38,19 +38,34 @@ func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func (uc *UserController) GetById(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("In get user by id controller")
-	uc.UserService.GetUserById()
-	w.Write([]byte("User fetching endpoint"))
+	userId := r.URL.Query().Get("id")
+	if userId == "" {
+		userId = r.Context().Value("userId").(string)
+	}
+
+	if userId == "" {
+		utils.WriteJsonErrorResponse(w, http.StatusBadRequest, "User Id is required", fmt.Errorf("missing user id in request"))
+		return
+	}
+
+	user, err := uc.UserService.GetUserById(userId)
+
+	if err != nil {
+		utils.WriteJsonErrorResponse(w, http.StatusInternalServerError, "Failed to fetch user", err)
+		return
+	}
+	if user == nil {
+		utils.WriteJsonErrorResponse(w, http.StatusNotFound, "User not found", fmt.Errorf("user with id:"+userId+" is not present"))
+		return
+	}
+	utils.WriteJsonSuccessResponse(w, http.StatusOK, "User fetched successfully", user)
+	fmt.Println("User fetched successfully: ", user)
 }
 
 func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
+
+	payload := r.Context().Value("payload").(dto.LoginUserRequestDTO)
 	fmt.Println("In user login controller")
-
-	var payload dto.LoginUserRequestDTO
-
-	if err := utils.ReadJsonBody(r, &payload); err != nil {
-		utils.WriteJsonErrorResponse(w, http.StatusBadRequest, "Something went wrong while logging in", err)
-		return
-	}
 
 	if validationErr := utils.Validator.Struct(payload); validationErr != nil {
 		utils.WriteJsonErrorResponse(w, http.StatusBadRequest, "Invalid input data", validationErr)
