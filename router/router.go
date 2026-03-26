@@ -12,12 +12,13 @@ type Router interface {
 	Register(r chi.Router)
 }
 
-func SetupRouter(UserRouter Router) *chi.Mux {
+func SetupRouter(UserRouter Router, RoleRouter Router) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middlewares.RequestLogger)
 	router.Use(middlewares.RateLimitMiddleware)
 	router.Get("/ping", controllers.PingHandler)
 	router.HandleFunc("/fakestoreservice/*", utils.ProxyToService("https://fakestoreapi.com", "/fakestoreservice"))
 	UserRouter.Register(router)
+	RoleRouter.Register(router)
 	return router
 }

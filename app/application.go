@@ -48,9 +48,16 @@ func (app *Application) Run() error {
 	uc := controllers.NewUserController(us)
 	uRouter := router.NewUserRouter(uc)
 
+	rpr := repo.NewRolePermissionRepository(db)
+
+	rr := repo.NewRoleRepository(db)
+	rs := services.NewRoleService(rr, rpr)
+	rc := controllers.NewRoleController(rs)
+	rRouter := router.NewRoleRouter(rc)
+
 	server := &http.Server{
 		Addr:         app.Config.Addr,
-		Handler:      router.SetupRouter(uRouter),
+		Handler:      router.SetupRouter(uRouter, rRouter),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}

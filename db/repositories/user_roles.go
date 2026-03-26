@@ -10,7 +10,7 @@ type UserRoleRepository interface {
 	AssignRoleToUser(userId int64, roleId int64) error
 	RemoveRoleFromUser(userId int64, roleId int64) error
 	GetUserPermissions(userId int64) ([]*models.Permission, error)
-	HasPermission(userId int64, permissionName string) (bool, string)
+	HasPermission(userId int64, permissionName string) (bool, error)
 	HasRole(userId int64, roleName string) (bool, error)
 }
 
@@ -88,11 +88,75 @@ func (u *UserRoleRepositoryImpl) GetUserPermissions(userId int64) ([]*models.Per
 		return nil, err
 	}
 	defer rows.Close()
-	return nil, nil
+
+	var permissions []*models.Permission
+	for rows.Next() {
+		permission := &models.Permission{}
+		if err := rows.Scan(&permission.Id, &permission.Name, &permission.Description, &permission.Resource, &permission.Action, &permission.CreatedAt, &permission.UpdatedAt); err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, permission)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
 }
-func (u *UserRoleRepositoryImpl) HasPermission(userId int64, permissionName string) (bool, string) {
-	return true, ""
+func (u *UserRoleRepositoryImpl) HasPermission(userId int64, permissionName string) (bool, error) {
+	query := `
+		SELECT COUNT(*) > 0
+		FROM user_roles ur
+		INNER JOIN role_permissions rp ON ur.role_id = rp.role_id
+		INNER JOIN permissions p ON rp.permission_id = p.id
+		WHERE ur.user_id = ? AND p.name = ?
+	`
+
+	var exists bool
+	err := u.db.QueryRow(query, userId, permissionName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 func (u *UserRoleRepositoryImpl) HasRole(userId int64, roleName string) (bool, error) {
-	return true, nil
+	query := `
+		SELECT COUNT(*) > 0
+		FROM user_roles ur
+		INNER JOIN roles r ON ur.role_id = r.id
+		WHERE ur.user_id = ? AND r.name = ?
+	`
+
+	var exists bool
+	err := u.db.QueryRow(query, userId, roleName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (u *UserRespositoryImpl) HasAllRoles(userId int64, roleNames []string) (bool, error) {
+	if len(roleNames) == 0 {
+		return true, nil
+	}
+
+	query := `
+		SELECT COUNT(*) = ?
+		FROM user_roles ur
+		INNER JOIN roles r ON ur.role_id = r.id
+		WHERE ur.user_id = ? AND r.name IN (?)
+		GROUP BY ur.user_id
+	`
+
+	row := u.db.QueryRow(query, len(roleNames), userId, roleNames)
+
+	var hasAllRoles bool
+	if err := row.Scan(&hasAllRoles); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return hasAllRoles, nil
 }
